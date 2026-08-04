@@ -3,7 +3,7 @@
 A Soroban smart contract crowdfunding campaign with a React/Next.js frontend, deployed on Stellar Testnet.
 
 - **Smart Contract (Testnet):** `CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5`
-- **Live Demo Link:** https://stellar-orange-belt-crowdfund-inyxwywvi.vercel.app/
+- **Live Demo Link:** https://stellar-orange-belt-crowdfund-gamma.vercel.app/
 - **Stack:** Soroban (Rust), Next.js, Tailwind CSS, `@creit.tech/stellar-wallets-kit`, GitHub Actions, Vitest
 - **Wallets Supported:** Freighter, xBull, Albedo
 
@@ -181,7 +181,7 @@ NEXT_PUBLIC_CONTRACT_ID=CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5
 | Public GitHub repository | ✅ | https://github.com/iyanumajekodunmi756/StableFunding3 |
 | README with complete documentation | ✅ | This file |
 | 10+ meaningful commits | ✅ | 16 commits on `orange-belt-dev` |
-| Live demo link | ✅ | https://stellar-orange-belt-crowdfund-inyxwywvi.vercel.app/ |
+| Live demo link | ✅ | https://stellar-orange-belt-crowdfund-gamma.vercel.app/ |
 | Contract deployment address | ✅ | `CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5` |
 | Transaction hash for contract interaction | ✅ | `9d3f3d781eeaeaa83703afb65e35428159fca18fdf1c659aaa0e9e824b4e5ce0` (25 XLM contribution — see [Stellar Expert](https://stellar.expert/explorer/testnet/tx/9d3f3d781eeaeaa83703afb65e35428159fca18fdf1c659aaa0e9e824b4e5ce0)) |
 | Screenshot — mobile responsive UI | ⏳ | Drop into `docs/screenshots/mobile-responsive-ui.png` (see [docs/screenshots/README.md](docs/screenshots/README.md)) |
