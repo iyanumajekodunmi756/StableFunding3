@@ -1,0 +1,56 @@
+========================================================
+ Crowdfund Test Output
+ Generated: 2026-08-04
+ Project: stellar-orange-belt-crowdfund (StableFunding3)
+========================================================
+
+Both test suites pass on the current orange-belt-dev branch.
+Full raw output below for evidence.
+
+--------------------------------------------------------
+1) Contract tests — `cargo test` (contracts/crowdfund)
+   Command: cd contracts/crowdfund && cargo test
+   Exit code: 0
+--------------------------------------------------------
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.87s
+     Running unittests src/lib.rs (/workspaces/StableFunding3/target/debug/deps/crowdfund-fce8209a02eda461)
+
+running 5 tests
+test test::test_claim_after_target_met_and_deadline_passed ... ok
+test test::test_contribution_tracking ... ok
+test test::test_double_claim_panics - should panic ... ok
+test test::test_fund_after_deadline_panics - should panic ... ok
+test test::test_premature_claim_before_deadline_panics - should panic ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.58s
+
+--------------------------------------------------------
+2) Frontend tests — `npm test` (vitest run)
+   Command: npm test
+   Exit code: 0
+--------------------------------------------------------
+
+> stellar-orange-belt-crowdfund@0.1.0 test
+> vitest run
+
+ RUN  v2.1.9 /workspaces/StableFunding3
+
+ ✓ src/utils/events.test.ts (4 tests) 14ms
+ ✓ src/components/TransactionAlert.test.tsx (4 tests) 45ms
+ ✓ src/utils/errors.test.ts (5 tests) 3ms
+ ✓ src/components/ProgressBar.test.tsx (3 tests) 654ms
+   ✓ ProgressBar > renders current/target amounts and the percentage 644ms
+ ✓ src/components/CountdownTimer.test.tsx (2 tests) 33ms
+
+ Test Files  5 passed (5)
+      Tests  18 passed (18)
+   Start at  10:20:01
+   Duration  6.75s (transform 107ms, setup 314ms, collect 1.21s, tests 750ms, environment 3.13s, prepare 294ms)
+
+========================================================
+ Summary
+   Contract tests:  5 passed, 0 failed
+   Frontend tests: 18 passed, 0 failed
+   Total:          23 passed, 0 failed
+========================================================
