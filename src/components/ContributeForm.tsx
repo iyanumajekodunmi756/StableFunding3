@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { TxStatus } from "@/types";
+import type { TxAction, TxStatus } from "@/types";
 
 interface ContributeFormProps {
   txStatus: TxStatus;
+  txAction: TxAction;
   onContribute: (amount: number) => Promise<void>;
 }
 
@@ -16,9 +17,10 @@ const STATUS_LABELS: Record<TxStatus, string | null> = {
   failure: null,
 };
 
-export default function ContributeForm({ txStatus, onContribute }: ContributeFormProps) {
+export default function ContributeForm({ txStatus, txAction, onContribute }: ContributeFormProps) {
   const [amount, setAmount] = useState("");
   const isPending = txStatus === "awaiting_approval" || txStatus === "validating";
+  const contributePending = isPending && txAction === "contribute";
   const statusLabel = STATUS_LABELS[txStatus];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,7 +35,7 @@ export default function ContributeForm({ txStatus, onContribute }: ContributeFor
     <form onSubmit={handleSubmit} className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
       <h3 className="mb-4 text-lg font-semibold text-gray-900">Contribute</h3>
 
-      {isPending && statusLabel && (
+      {contributePending && statusLabel && (
         <div className="mb-4 flex items-center gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -58,7 +60,7 @@ export default function ContributeForm({ txStatus, onContribute }: ContributeFor
           disabled={isPending || !amount}
           className="rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isPending ? "Contributing..." : "Contribute"}
+          {contributePending ? "Contributing..." : "Contribute"}
         </button>
       </div>
     </form>

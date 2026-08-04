@@ -16,7 +16,7 @@ import { xBullModule } from "@creit.tech/stellar-wallets-kit/modules/xbull";
 import { AlbedoModule } from "@creit.tech/stellar-wallets-kit/modules/albedo";
 import { Client, networks } from "@/contracts/crowdfund-client";
 import type { CampaignState, TxState } from "@/types";
-import { UserRejected, InsufficientFunds } from "@/utils/errors";
+import { mapTransactionError } from "@/utils/errors";
 
 const MODULES = [new FreighterModule(), new xBullModule(), new AlbedoModule()];
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://soroban-testnet.stellar.org";
@@ -31,7 +31,6 @@ interface CachedCampaign {
 
 export interface CrowdfundContextValue {
   address: string | null;
-  isConnecting: boolean;
   handleConnected: (addr: string) => void;
   disconnectWallet: () => void;
   campaign: CampaignState | null;
@@ -39,6 +38,7 @@ export interface CrowdfundContextValue {
   txState: TxState;
   explorerUrl: string | null;
   contribute: (amount: number) => Promise<void>;
+  claim: () => Promise<void>;
   refreshCampaign: () => Promise<void>;
   resetTx: () => void;
 }
@@ -70,11 +70,11 @@ function saveCache(data: CampaignState) {
 
 export function CrowdfundProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
   const [campaign, setCampaign] = useState<CampaignState | null>(loadCached);
   const [campaignLoading, setCampaignLoading] = useState(!campaign);
   const [txState, setTxState] = useState<TxState>({
     status: "idle",
+    action: "contribute",
     hash: null,
     error: null,
   });
@@ -88,6 +88,33 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
       modules: MODULES,
       network: Networks.TESTNET,
     });
+  }, []);
+
+  const refreshCampaign = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client) return;
+
+    setCampaignLoading(true);
+    try {
+      const { result } = await client.get_status();
+      const data: CampaignState = {
+        totalRaised: Number(result[0]),
+        target: Number(result[1]),
+        deadlineTimestamp: Number(result[2]),
+        deadlinePassed: Number(result[3]) === 1,
+        isClaimed: Number(result[4]) === 1,
+      };
+      setCampaign(data);
+      saveCache(data);
+    } catch (err) {
+      console.error("Soroban Fetch Error:", err);
+      try {
+        localStorage.removeItem(CACHE_KEY);
+      } catch {
+      }
+    } finally {
+      setCampaignLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -110,33 +137,7 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
 
     clientRef.current = client;
     refreshCampaign();
-  }, [address]);
-
-  const refreshCampaign = useCallback(async () => {
-    const client = clientRef.current;
-    if (!client) return;
-
-    setCampaignLoading(true);
-    try {
-      const { result } = await client.get_status();
-      const data: CampaignState = {
-        totalRaised: Number(result[0]),
-        target: Number(result[1]),
-        deadlineTimestamp: Number(result[2]),
-        isClaimed: Number(result[4]) === 1,
-      };
-      setCampaign(data);
-      saveCache(data);
-    } catch (err) {
-      console.error("Soroban Fetch Error:", err);
-      try {
-        localStorage.removeItem(CACHE_KEY);
-      } catch {
-      }
-    } finally {
-      setCampaignLoading(false);
-    }
-  }, []);
+  }, [address, refreshCampaign]);
 
   const handleConnected = useCallback((addr: string) => {
     setAddress(addr);
@@ -149,11 +150,11 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
     }
     setAddress(null);
     setCampaign(null);
-    setTxState({ status: "idle", hash: null, error: null });
+    setTxState({ status: "idle", action: "contribute", hash: null, error: null });
   }, []);
 
   const resetTx = useCallback(() => {
-    setTxState({ status: "idle", hash: null, error: null });
+    setTxState({ status: "idle", action: "contribute", hash: null, error: null });
   }, []);
 
   const contribute = useCallback(
@@ -161,51 +162,49 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
       const client = clientRef.current;
       if (!client || !address) return;
 
-      setTxState({ status: "awaiting_approval", hash: null, error: null });
+      setTxState({ status: "awaiting_approval", action: "contribute", hash: null, error: null });
 
       try {
         const tx = await client.fund({ donor: address, amount });
-        setTxState({ status: "validating", hash: null, error: null });
+        setTxState({ status: "validating", action: "contribute", hash: null, error: null });
 
         const sent = await tx.signAndSend();
         const hash = sent.sendTransactionResponse?.hash;
 
         if (!hash) throw new Error("No transaction hash returned");
 
-        setTxState({ status: "success", hash, error: null });
+        setTxState({ status: "success", action: "contribute", hash, error: null });
         await refreshCampaign();
       } catch (err: unknown) {
-        let mapped: Error;
-
-        if (err instanceof Error) {
-          const msg = err.message.toLowerCase();
-
-          if (
-            msg.includes("user declined") ||
-            msg.includes("cancel") ||
-            msg.includes("reject") ||
-            msg.includes("UserRejected")
-          ) {
-            mapped = new UserRejected();
-          } else if (
-            msg.includes("insufficient") ||
-            msg.includes("budget") ||
-            msg.includes("fee") ||
-            msg.includes("could not be funded")
-          ) {
-            mapped = new InsufficientFunds("~0.01 XLM", "0 XLM");
-          } else {
-            mapped = err;
-          }
-        } else {
-          mapped = new Error("An unknown error occurred");
-        }
-
-        setTxState({ status: "failure", hash: null, error: mapped.message });
+        const mapped = mapTransactionError(err);
+        setTxState({ status: "failure", action: "contribute", hash: null, error: mapped.message });
       }
     },
     [address, refreshCampaign]
   );
+
+  const claim = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client || !address) return;
+
+    setTxState({ status: "awaiting_approval", action: "claim", hash: null, error: null });
+
+    try {
+      const tx = await client.claim({ caller: address });
+      setTxState({ status: "validating", action: "claim", hash: null, error: null });
+
+      const sent = await tx.signAndSend();
+      const hash = sent.sendTransactionResponse?.hash;
+
+      if (!hash) throw new Error("No transaction hash returned");
+
+      setTxState({ status: "success", action: "claim", hash, error: null });
+      await refreshCampaign();
+    } catch (err: unknown) {
+      const mapped = mapTransactionError(err);
+      setTxState({ status: "failure", action: "claim", hash: null, error: mapped.message });
+    }
+  }, [address, refreshCampaign]);
 
   const explorerUrl = txState.hash
     ? `https://stellar.expert/explorer/testnet/tx/${txState.hash}`
@@ -215,7 +214,6 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
     <CrowdfundContext.Provider
       value={{
         address,
-        isConnecting,
         handleConnected,
         disconnectWallet,
         campaign,
@@ -223,6 +221,7 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
         txState,
         explorerUrl,
         contribute,
+        claim,
         refreshCampaign,
         resetTx,
       }}

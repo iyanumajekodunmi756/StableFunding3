@@ -31,3 +31,31 @@ export class InsufficientFunds extends Error {
     this.available = available;
   }
 }
+
+export function mapTransactionError(err: unknown): Error {
+  if (err instanceof Error) {
+    const msg = err.message.toLowerCase();
+
+    if (
+      msg.includes("user declined") ||
+      msg.includes("cancel") ||
+      msg.includes("reject") ||
+      msg.includes("userrejected")
+    ) {
+      return new UserRejected();
+    }
+
+    if (
+      msg.includes("insufficient") ||
+      msg.includes("budget") ||
+      msg.includes("fee") ||
+      msg.includes("could not be funded")
+    ) {
+      return new InsufficientFunds("~0.01 XLM", "0 XLM");
+    }
+
+    return err;
+  }
+
+  return new Error("An unknown error occurred");
+}

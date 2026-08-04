@@ -6,6 +6,7 @@ import WalletModal from "@/components/WalletModal";
 import ProgressBar from "@/components/ProgressBar";
 import CountdownTimer from "@/components/CountdownTimer";
 import ContributeForm from "@/components/ContributeForm";
+import ClaimFunds from "@/components/ClaimFunds";
 import TransactionAlert from "@/components/TransactionAlert";
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
     txState,
     explorerUrl,
     contribute,
+    claim,
     refreshCampaign,
     resetTx,
   } = useCrowdfund();
@@ -99,7 +101,15 @@ export default function Home() {
 
           <ContributeForm
             txStatus={txState.status}
+            txAction={txState.action}
             onContribute={contribute}
+          />
+
+          <ClaimFunds
+            campaign={campaign}
+            txStatus={txState.status}
+            txAction={txState.action}
+            onClaim={claim}
           />
 
           <TransactionAlert
@@ -107,6 +117,7 @@ export default function Home() {
             hash={txState.hash}
             error={txState.error}
             explorerUrl={explorerUrl}
+            action={txState.action}
             onDismiss={resetTx}
           />
         </div>

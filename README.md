@@ -22,7 +22,7 @@ A Soroban smart contract crowdfunding campaign with a React/Next.js frontend, de
 ├── Cargo.lock                  # Locked Rust dependency versions
 ├── src/                        # Next.js frontend
 │   ├── app/                    # Pages & layout
-│   ├── components/             # ProgressBar, CountdownTimer, ContributeForm, ...
+│   ├── components/             # ProgressBar, CountdownTimer, ContributeForm, ClaimFunds, ...
 │   ├── context/                # CrowdfundContext (wallet + contract client)
 │   ├── contracts/crowdfund-client/   # Generated TS bindings for the contract
 │   ├── types/                  # CampaignState, TxState
@@ -72,9 +72,9 @@ The frontend talks to the deployed contract through generated TypeScript binding
 
 | Contract fn | TS client method | Frontend usage |
 | --- | --- | --- |
-| `get_status` | `client.get_status()` | `refreshCampaign()` maps the five return fields (`totalRaised`, `target`, `deadline`, `deadlinePassed`, `isClaimed`) into `CampaignState` — using `totalRaised`/`target`/`deadline`/`isClaimed` to drive `ProgressBar`, `CountdownTimer`, and claimed state. Results are cached in localStorage with a 5-minute TTL. |
+| `get_status` | `client.get_status()` | `refreshCampaign()` maps the five return fields (`totalRaised`, `target`, `deadline`, `deadlinePassed`, `isClaimed`) into `CampaignState` — driving `ProgressBar`, `CountdownTimer`, the claim-eligibility checks, and claimed state. Results are cached in localStorage with a 5-minute TTL. |
 | `fund` | `client.fund({ donor, amount })` | `contribute(amount)` simulates, then `signAndSend()`s the transaction and shows step-by-step status (awaiting approval → validating → success/failure) plus a Stellar Expert explorer link. |
-| `claim` | `client.claim({ caller })` | Wired into the generated client (bound for future campaign-owner flows). |
+| `claim` | `client.claim({ caller })` | The `ClaimFunds` card lets the connected wallet claim the raised funds once the on-chain status shows `deadlinePassed && totalRaised >= target && !isClaimed`; on success it refreshes the campaign so the card flips to a "Claimed" state. |
 | `initialize` | `client.initialize({ target, deadline })` | Exposed in the client; the deployed campaign was initialized on-chain at deploy time. |
 
 Error mapping in `src/utils/errors.ts` defines three error classes — `WalletNotFound`, `UserRejected` (signature declined), `InsufficientFunds` (budget/fee failures) — with the latter two actively mapped from transaction failures alongside raw errors.
@@ -100,6 +100,7 @@ NEXT_PUBLIC_CONTRACT_ID=CCLJ4FEXKXEZKS6UCROBEKLIVDOPFVP6Z75QS3AV5CUS2WAM3EBQNL7W
 - Connect wallet (Freighter / xBull / Albedo)
 - View campaign progress bar and live countdown timer
 - Contribute XLM to the campaign
+- Claim raised funds from the UI after the deadline (when the target is met)
 - Step-by-step transaction status feedback
 - 3-tier error handling (WalletNotFound, UserRejected, InsufficientFunds)
 - localStorage caching with 5-minute TTL

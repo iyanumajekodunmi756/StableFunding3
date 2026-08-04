@@ -1,10 +1,13 @@
 "use client";
 
+import type { TxAction } from "@/types";
+
 interface TransactionAlertProps {
   status: "success" | "failure" | null;
   hash: string | null;
   error: string | null;
   explorerUrl: string | null;
+  action: TxAction;
   onDismiss: () => void;
 }
 
@@ -13,6 +16,7 @@ export default function TransactionAlert({
   hash,
   error,
   explorerUrl,
+  action,
   onDismiss,
 }: TransactionAlertProps) {
   if (!status) return null;
@@ -39,7 +43,9 @@ export default function TransactionAlert({
           <div>
             {status === "success" ? (
               <div>
-                <p className="text-sm font-medium text-green-800">Contribution recorded on-chain!</p>
+                <p className="text-sm font-medium text-green-800">
+                  {action === "claim" ? "Funds claimed successfully!" : "Contribution recorded on-chain!"}
+                </p>
                 {explorerUrl && hash && (
                   <a
                     href={explorerUrl}
