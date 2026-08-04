@@ -26,7 +26,7 @@
 | **0:52–1:00** | Click the tx-hash link → Stellar Expert shows the confirmed payment in the explorer. | "And here it is on the Stellar testnet explorer — the XLM moved into the campaign's escrow via the Stellar Asset Contract." |
 | **1:00–1:12** | Back in the app: **Recent Activity** card with the pulsing **Live** badge shows `…4f2d contributed +10 XLM · Ledger #…`; the progress bar now reads `35 / 1,000 XLM`. | "Back on the app, the live activity feed streamed the contribution in from the RPC, and the progress bar updated — real-time event streaming, plus polling while connected." |
 | **1:12–1:22** | Scroll to **Claim Funds** card: "Claiming opens once the campaign deadline passes." Button is greyed out as **Unavailable**. | "When the deadline passes *and* the target is met, the contract lets the creator claim the raised funds. Until then, the smart contract enforces the rules — this button stays locked." |
-| **1:22–1:30** | Final shot: page header + address chip. (Optional: repo/CI tab.) | "The contract is covered by 5 Rust unit tests, the frontend by 18 Vitest tests, all running in CI on every push. That's the whole loop — on-chain, verifiable crowdfunding." |
+| **1:22–1:30** | Final shot: page header + address chip. (Optional: repo/CI tab.) | "The contract is covered by 5 Rust unit tests, the frontend by 19 Vitest tests, all running in CI on every push. That's the whole loop — on-chain, verifiable crowdfunding." |
 
 **Total:** ~1:30.
 

@@ -82,10 +82,10 @@ cargo test  # from the repo root (Rust workspace); requires a toolchain compatib
 
 ## 3. Frontend Tests
 
-Vitest + Testing Library cover the UI logic — **18 tests across 5 files**:
+Vitest + Testing Library cover the UI logic — **19 tests across 5 files**:
 
 ```bash
-npm test   # → 5 files, 18 tests passing
+npm test   # → 5 files, 19 tests passing
 ```
 
 - `src/utils/errors.test.ts` — transaction error mapping (UserRejected / InsufficientFunds / passthrough)
@@ -141,7 +141,7 @@ All hashes are viewable on [Stellar Expert](https://stellar.expert/explorer/test
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push/PR:
 
 - **contract-tests:** Rust toolchain → `cargo test` (5 tests)
-- **frontend:** Node 22 → `npm ci` → `npm run lint` → `npm test` (18 tests) → `npm run build`
+- **frontend:** Node 22 → `npm ci` → `npm run lint` → `npm test` (19 tests) → `npm run build`
 
 ## Getting Started
 
@@ -170,7 +170,7 @@ NEXT_PUBLIC_CONTRACT_ID=CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5
 | Smart contract deployment workflow | `scripts/deploy.sh` + `make deploy` |
 | Mobile responsive frontend | Tailwind responsive layout |
 | Error handling & loading states | 3-tier errors, tx state machine, loading/error UI |
-| Tests (contracts + frontend) | 5 contract tests (`cargo test`) + 18 frontend tests (`npm test`) |
+| Tests (contracts + frontend) | 5 contract tests (`cargo test`) + 19 frontend tests (`npm test`) |
 | Production-ready architecture | TS strict, env fallbacks, caching, generated client, workspace layout |
 | Documentation & demo | This README + live demo URL |
 
@@ -180,16 +180,16 @@ NEXT_PUBLIC_CONTRACT_ID=CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5
 | --- | --- | --- |
 | Public GitHub repository | ✅ | https://github.com/iyanumajekodunmi756/StableFunding3 |
 | README with complete documentation | ✅ | This file |
-| 10+ meaningful commits | ✅ | 16 commits on `orange-belt-dev` |
+| 10+ meaningful commits | ✅ | 23 commits on `orange-belt-dev` |
 | Live demo link | ✅ | https://stellar-orange-belt-crowdfund-gamma.vercel.app/ |
 | Contract deployment address | ✅ | `CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5` |
 | Transaction hash for contract interaction | ✅ | `9d3f3d781eeaeaa83703afb65e35428159fca18fdf1c659aaa0e9e824b4e5ce0` (25 XLM contribution — see [Stellar Expert](https://stellar.expert/explorer/testnet/tx/9d3f3d781eeaeaa83703afb65e35428159fca18fdf1c659aaa0e9e824b4e5ce0)) |
-| Screenshot — mobile responsive UI | ⏳ | Drop into `docs/screenshots/mobile-responsive-ui.png` (see [docs/screenshots/README.md](docs/screenshots/README.md)) |
-| Screenshot — CI/CD pipeline running | ⏳ | Drop into `docs/screenshots/ci-pipeline.png` (GitHub → Actions → latest run) |
-| Screenshot — test output (3+ passing) | ⏳ | Drop into `docs/screenshots/test-output.png` (`cargo test` = 5 passing, `npm test` = 18 passing) |
+| Screenshot — mobile responsive UI | ✅ | [docs/screenshots/mobile-responsive-ui.png](docs/screenshots/mobile-responsive-ui.png) |
+| Screenshot — CI/CD pipeline running | ✅ | [docs/screenshots/ci-pipeline.png](docs/screenshots/ci-pipeline.png) (latest run — both jobs green) |
+| Screenshot — test output (3+ passing) | ✅ | [docs/screenshots/test-output.png](docs/screenshots/test-output.png) (`cargo test` = 5 passing, `npm test` = 19 passing) |
 | Demo video link (1–2 min) | ⏳ | Add your hosted video URL here (e.g., YouTube/Drive), then update this row |
 
-> **How to finish the ⏳ rows:** capture the three screenshots into `docs/screenshots/` (instructions in that folder), and paste your demo-video URL into the row above. The transaction-hash row is already complete with a real on-chain contribution.
+> **Remaining ⏳ row:** once the 1–2 min demo video is recorded, paste its hosted URL (YouTube/Drive) into the row above. Screenshots, tests, tx hash, and repo are all complete.
 
 ## Features
 
