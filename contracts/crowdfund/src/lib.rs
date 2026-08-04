@@ -1,23 +1,31 @@
 #![no_std]
-use soroban_sdk::{contract, contractevent, contractimpl, symbol_short, Address, Env, Symbol, Vec};
+use soroban_sdk::{contract, contractevent, contractimpl, symbol_short, token, Address, Env, Symbol, Vec};
 
 const TARGET: Symbol = symbol_short!("TARGET");
 const DEADLINE: Symbol = symbol_short!("DLINE");
 const TOTAL_RAISED: Symbol = symbol_short!("TOTAL");
 const CLAIMED: Symbol = symbol_short!("CLAIM");
+const TOKEN: Symbol = symbol_short!("TOKEN");
 
 #[contractevent]
 pub struct FundEvent {
+    #[topic]
     pub donor: Address,
+    #[data]
     pub amount: u32,
+    #[data]
     pub total_raised: u32,
+    #[data]
     pub target: u32,
 }
 
 #[contractevent]
 pub struct ClaimEvent {
+    #[topic]
     pub caller: Address,
+    #[data]
     pub total_raised: u32,
+    #[data]
     pub target: u32,
 }
 
@@ -26,7 +34,7 @@ pub struct CrowdfundContract;
 
 #[contractimpl]
 impl CrowdfundContract {
-    pub fn initialize(env: Env, target: u32, deadline: u64) {
+    pub fn initialize(env: Env, target: u32, deadline: u64, token: Address) {
         if env.storage().instance().has(&TARGET) {
             panic!("Campaign already initialized");
         }
@@ -34,6 +42,7 @@ impl CrowdfundContract {
         env.storage().instance().set(&DEADLINE, &deadline);
         env.storage().instance().set(&TOTAL_RAISED, &0u32);
         env.storage().instance().set(&CLAIMED, &false);
+        env.storage().instance().set(&TOKEN, &token);
     }
 
     pub fn fund(env: Env, donor: Address, amount: u32) -> u32 {
@@ -46,6 +55,12 @@ impl CrowdfundContract {
         if ledger_time > deadline {
             panic!("Campaign deadline has passed");
         }
+
+        // Inter-contract communication: escrow `amount` of the campaign token
+        // from the donor into this contract via the Stellar Asset Contract.
+        let token: Address = env.storage().instance().get(&TOKEN).unwrap();
+        token::Client::new(&env, &token)
+            .transfer(&donor, &env.current_contract_address(), &(amount as i128));
 
         let mut total_raised: u32 = env.storage().instance().get(&TOTAL_RAISED).unwrap();
         let mut donor_balance: u32 = env.storage().persistent().get(&donor).unwrap_or(0);
@@ -87,6 +102,12 @@ impl CrowdfundContract {
         if claimed {
             panic!("Funds have already been claimed");
         }
+
+        // Inter-contract communication: pay out the escrowed funds to the
+        // caller via the Stellar Asset Contract.
+        let token: Address = env.storage().instance().get(&TOKEN).unwrap();
+        token::Client::new(&env, &token)
+            .transfer(&env.current_contract_address(), &caller, &(total_raised as i128));
 
         env.storage().instance().set(&CLAIMED, &true);
 

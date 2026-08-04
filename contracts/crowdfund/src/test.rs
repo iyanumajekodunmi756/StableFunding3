@@ -2,44 +2,56 @@
 
 use super::*;
 use soroban_sdk::{
-    testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke},
-    IntoVal,
+    testutils::{Address as _, Ledger},
+    token, Address, Env,
 };
+
+/// Registers the campaign token (Stellar Asset Contract), deploys the
+/// crowdfund contract, and initializes it.
+///
+/// Returns the contract id, token address, and a token client (balances).
+fn setup(env: &Env, target: u32, deadline: u64) -> (Address, Address, token::Client<'_>) {
+    let admin = Address::generate(env);
+    let token = env.register_stellar_asset_contract_v2(admin.clone()).address();
+    let token_client = token::Client::new(env, &token);
+
+    let contract_id = env.register(CrowdfundContract, ());
+    let client = CrowdfundContractClient::new(env, &contract_id);
+    client.initialize(&target, &deadline, &token);
+
+    (contract_id, token, token_client)
+}
+
+/// Mints `amount` of the campaign token to `to`. Tests run with
+/// `env.mock_all_auths()`, so admin auth is auto-approved.
+fn mint(token: &Address, to: &Address, amount: i128, env: &Env) {
+    let admin_client = token::StellarAssetClient::new(env, token);
+    admin_client.mint(to, &amount);
+}
 
 #[test]
 fn test_contribution_tracking() {
     let env = Env::default();
+    env.mock_all_auths();
     env.ledger().set_timestamp(1000);
 
-    let contract_id = env.register(CrowdfundContract, ());
+    let (contract_id, token, token_client) = setup(&env, 1000, 5000);
     let client = CrowdfundContractClient::new(&env, &contract_id);
 
-    client.initialize(&1000u32, &5000u64);
-
-    let donor = Address::generate(&env);
-
-    let invoke = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "fund",
-        args: (donor.clone(), 200u32).into_val(&env),
-        sub_invokes: &[],
-    };
-    let raised = client
-        .mock_auths(&[MockAuth { address: &donor, invoke: &invoke }])
-        .fund(&donor, &200u32);
-    assert_eq!(raised, 200);
-
+    let donor1 = Address::generate(&env);
     let donor2 = Address::generate(&env);
-    let invoke2 = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "fund",
-        args: (donor2.clone(), 300u32).into_val(&env),
-        sub_invokes: &[],
-    };
-    let raised = client
-        .mock_auths(&[MockAuth { address: &donor2, invoke: &invoke2 }])
-        .fund(&donor2, &300u32);
+    mint(&token, &donor1, 1000, &env);
+    mint(&token, &donor2, 1000, &env);
+
+    let raised = client.fund(&donor1, &200);
+    assert_eq!(raised, 200);
+    let raised = client.fund(&donor2, &300);
     assert_eq!(raised, 500);
+
+    // Inter-contract escrow: the contract holds the contributed tokens.
+    assert_eq!(token_client.balance(&contract_id), 500);
+    assert_eq!(token_client.balance(&donor1), 800);
+    assert_eq!(token_client.balance(&donor2), 700);
 
     let status = client.get_status();
     assert_eq!(status.get(0).unwrap(), 500);
@@ -52,38 +64,28 @@ fn test_contribution_tracking() {
 #[test]
 fn test_claim_after_target_met_and_deadline_passed() {
     let env = Env::default();
+    env.mock_all_auths();
     env.ledger().set_timestamp(1000);
 
-    let contract_id = env.register(CrowdfundContract, ());
+    let (contract_id, token, token_client) = setup(&env, 500, 2000);
     let client = CrowdfundContractClient::new(&env, &contract_id);
 
-    client.initialize(&500u32, &2000u64);
-
     let donor = Address::generate(&env);
-    let invoke = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "fund",
-        args: (donor.clone(), 500u32).into_val(&env),
-        sub_invokes: &[],
-    };
-    let raised = client
-        .mock_auths(&[MockAuth { address: &donor, invoke: &invoke }])
-        .fund(&donor, &500u32);
+    mint(&token, &donor, 500, &env);
+
+    let raised = client.fund(&donor, &500);
     assert_eq!(raised, 500);
+    assert_eq!(token_client.balance(&contract_id), 500);
 
     env.ledger().set_timestamp(3000);
 
     let caller = Address::generate(&env);
-    let claim_invoke = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "claim",
-        args: (caller.clone(),).into_val(&env),
-        sub_invokes: &[],
-    };
-    let claimed = client
-        .mock_auths(&[MockAuth { address: &caller, invoke: &claim_invoke }])
-        .claim(&caller);
+    let claimed = client.claim(&caller);
     assert_eq!(claimed, 500);
+
+    // Inter-contract payout: escrowed funds moved from the contract to the caller.
+    assert_eq!(token_client.balance(&contract_id), 0);
+    assert_eq!(token_client.balance(&caller), 500);
 
     let status = client.get_status();
     assert_eq!(status.get(4).unwrap(), 1);
@@ -93,95 +95,51 @@ fn test_claim_after_target_met_and_deadline_passed() {
 #[should_panic(expected = "Campaign deadline has not yet passed")]
 fn test_premature_claim_before_deadline_panics() {
     let env = Env::default();
+    env.mock_all_auths();
     env.ledger().set_timestamp(1000);
 
-    let contract_id = env.register(CrowdfundContract, ());
+    let (contract_id, token, _token_client) = setup(&env, 500, 2000);
     let client = CrowdfundContractClient::new(&env, &contract_id);
 
-    client.initialize(&500u32, &2000u64);
-
     let donor = Address::generate(&env);
-    let invoke = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "fund",
-        args: (donor.clone(), 500u32).into_val(&env),
-        sub_invokes: &[],
-    };
-    client
-        .mock_auths(&[MockAuth { address: &donor, invoke: &invoke }])
-        .fund(&donor, &500u32);
+    mint(&token, &donor, 500, &env);
+    client.fund(&donor, &500);
 
     let caller = Address::generate(&env);
-    let claim_invoke = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "claim",
-        args: (caller.clone(),).into_val(&env),
-        sub_invokes: &[],
-    };
-    client
-        .mock_auths(&[MockAuth { address: &caller, invoke: &claim_invoke }])
-        .claim(&caller);
+    client.claim(&caller);
 }
 
 #[test]
 #[should_panic(expected = "Funds have already been claimed")]
 fn test_double_claim_panics() {
     let env = Env::default();
+    env.mock_all_auths();
     env.ledger().set_timestamp(1000);
 
-    let contract_id = env.register(CrowdfundContract, ());
+    let (contract_id, token, _token_client) = setup(&env, 500, 2000);
     let client = CrowdfundContractClient::new(&env, &contract_id);
 
-    client.initialize(&500u32, &2000u64);
-
     let donor = Address::generate(&env);
-    let invoke = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "fund",
-        args: (donor.clone(), 500u32).into_val(&env),
-        sub_invokes: &[],
-    };
-    client
-        .mock_auths(&[MockAuth { address: &donor, invoke: &invoke }])
-        .fund(&donor, &500u32);
+    mint(&token, &donor, 500, &env);
+    client.fund(&donor, &500);
 
     env.ledger().set_timestamp(3000);
 
     let caller = Address::generate(&env);
-    let claim_invoke = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "claim",
-        args: (caller.clone(),).into_val(&env),
-        sub_invokes: &[],
-    };
-    client
-        .mock_auths(&[MockAuth { address: &caller, invoke: &claim_invoke }])
-        .claim(&caller);
-
-    client
-        .mock_auths(&[MockAuth { address: &caller, invoke: &claim_invoke }])
-        .claim(&caller);
+    client.claim(&caller);
+    client.claim(&caller);
 }
 
 #[test]
 #[should_panic(expected = "Campaign deadline has passed")]
 fn test_fund_after_deadline_panics() {
     let env = Env::default();
+    env.mock_all_auths();
     env.ledger().set_timestamp(5000);
 
-    let contract_id = env.register(CrowdfundContract, ());
+    let (contract_id, _token, _token_client) = setup(&env, 1000, 3000);
     let client = CrowdfundContractClient::new(&env, &contract_id);
 
-    client.initialize(&1000u32, &3000u64);
-
     let donor = Address::generate(&env);
-    let invoke = MockAuthInvoke {
-        contract: &contract_id,
-        fn_name: "fund",
-        args: (donor.clone(), 100u32).into_val(&env),
-        sub_invokes: &[],
-    };
-    client
-        .mock_auths(&[MockAuth { address: &donor, invoke: &invoke }])
-        .fund(&donor, &100u32);
+    client.fund(&donor, &100);
 }
