@@ -1,3 +1,9 @@
 node_modules/
 .next/
 *.tsbuildinfo
+
+# Rust / Soroban
+contracts/*/target
+target
+.soroban
+.stellar
