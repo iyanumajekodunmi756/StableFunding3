@@ -14,8 +14,8 @@ import { Networks } from "@creit.tech/stellar-wallets-kit/types";
 import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
 import { xBullModule } from "@creit.tech/stellar-wallets-kit/modules/xbull";
 import { AlbedoModule } from "@creit.tech/stellar-wallets-kit/modules/albedo";
-import { Client, networks } from "@/contracts/crowdfund-client";
-import type { CampaignState, TxState } from "@/types";
+import { Client, networks, rpc, scValToNative } from "@/contracts/crowdfund-client";
+import type { CampaignState, ContributionEvent, TxState } from "@/types";
 import { mapTransactionError } from "@/utils/errors";
 
 const MODULES = [new FreighterModule(), new xBullModule(), new AlbedoModule()];
@@ -23,6 +23,8 @@ const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://soroban-testnet.stel
 const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID || networks.testnet.contractId;
 const CACHE_KEY = "crowdfund_campaign";
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const POLL_INTERVAL_MS = 30 * 1000;
+const EVENT_LOOKBACK_LEDGERS = 5000;
 
 interface CachedCampaign {
   data: CampaignState;
@@ -35,6 +37,7 @@ export interface CrowdfundContextValue {
   disconnectWallet: () => void;
   campaign: CampaignState | null;
   campaignLoading: boolean;
+  recentEvents: ContributionEvent[];
   txState: TxState;
   explorerUrl: string | null;
   contribute: (amount: number) => Promise<void>;
@@ -72,6 +75,7 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
   const [address, setAddress] = useState<string | null>(null);
   const [campaign, setCampaign] = useState<CampaignState | null>(loadCached);
   const [campaignLoading, setCampaignLoading] = useState(!campaign);
+  const [recentEvents, setRecentEvents] = useState<ContributionEvent[]>([]);
   const [txState, setTxState] = useState<TxState>({
     status: "idle",
     action: "contribute",
@@ -117,6 +121,45 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /**
+   * Event streaming: queries recent contract events from Soroban RPC and
+   * decodes FundEvent contributions (topic[0] = "fund_event", topic[1] =
+   * donor; data = [amount, total_raised, target]). Handles both the new
+   * #[topic]/#[data] encoding and the legacy all-in-data encoding.
+   */
+  const refreshEvents = useCallback(async () => {
+    try {
+      const server = new rpc.Server(RPC_URL);
+      const latest = await server.getLatestLedger();
+      const res = await server.getEvents({
+        startLedger: Math.max(latest.sequence - EVENT_LOOKBACK_LEDGERS, 1),
+        filters: [{ type: "contract", contractIds: [CONTRACT_ID] }],
+        limit: 10,
+      });
+
+      const parsed: ContributionEvent[] = [];
+      for (const e of res.events) {
+        if (!e.inSuccessfulContractCall) continue;
+        const topics = e.topic.map((t) => scValToNative(t));
+        if (topics[0] !== "fund_event") continue;
+
+        const data = scValToNative(e.value) as number[];
+        const legacy = topics.length === 1; // pre-attribute encoding: donor in data
+        parsed.push({
+          donor: String(legacy ? data[0] : topics[1]),
+          amount: Number(legacy ? data[1] : data[0]),
+          totalRaised: Number(legacy ? data[2] : data[1]),
+          ledger: e.ledger,
+        });
+      }
+
+      parsed.sort((a, b) => b.ledger - a.ledger);
+      setRecentEvents(parsed.slice(0, 6));
+    } catch (err) {
+      console.error("Event stream error:", err);
+    }
+  }, []);
+
   useEffect(() => {
     if (!address) {
       clientRef.current = null;
@@ -137,7 +180,18 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
 
     clientRef.current = client;
     refreshCampaign();
-  }, [address, refreshCampaign]);
+    refreshEvents();
+  }, [address, refreshCampaign, refreshEvents]);
+
+  // Real-time updates: poll campaign status + events while connected.
+  useEffect(() => {
+    if (!address) return;
+    const id = setInterval(() => {
+      refreshCampaign();
+      refreshEvents();
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [address, refreshCampaign, refreshEvents]);
 
   const handleConnected = useCallback((addr: string) => {
     setAddress(addr);
@@ -175,6 +229,7 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
 
         setTxState({ status: "success", action: "contribute", hash, error: null });
         await refreshCampaign();
+        await refreshEvents();
       } catch (err: unknown) {
         const mapped = mapTransactionError(err);
         setTxState({ status: "failure", action: "contribute", hash: null, error: mapped.message });
@@ -218,6 +273,7 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
         disconnectWallet,
         campaign,
         campaignLoading,
+        recentEvents,
         txState,
         explorerUrl,
         contribute,

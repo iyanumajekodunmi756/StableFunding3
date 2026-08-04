@@ -6,6 +6,13 @@ export interface CampaignState {
   isClaimed: boolean;
 }
 
+export interface ContributionEvent {
+  donor: string;
+  amount: number;
+  totalRaised: number;
+  ledger: number;
+}
+
 export type TxStatus = "idle" | "awaiting_approval" | "validating" | "success" | "failure";
 
 export type TxAction = "contribute" | "claim";

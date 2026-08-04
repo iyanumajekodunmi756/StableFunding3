@@ -7,6 +7,7 @@ import ProgressBar from "@/components/ProgressBar";
 import CountdownTimer from "@/components/CountdownTimer";
 import ContributeForm from "@/components/ContributeForm";
 import ClaimFunds from "@/components/ClaimFunds";
+import RecentActivity from "@/components/RecentActivity";
 import TransactionAlert from "@/components/TransactionAlert";
 
 export default function Home() {
@@ -16,6 +17,7 @@ export default function Home() {
     disconnectWallet,
     campaign,
     campaignLoading,
+    recentEvents,
     txState,
     explorerUrl,
     contribute,
@@ -111,6 +113,8 @@ export default function Home() {
             txAction={txState.action}
             onClaim={claim}
           />
+
+          <RecentActivity events={recentEvents} />
 
           <TransactionAlert
             status={txState.status === "success" ? "success" : txState.status === "failure" ? "failure" : null}
