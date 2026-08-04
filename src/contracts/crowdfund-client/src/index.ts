@@ -34,7 +34,7 @@ if (typeof window !== "undefined") {
 export const networks = {
   testnet: {
     networkPassphrase: "Test SDF Network ; September 2015",
-    contractId: "CCLJ4FEXKXEZKS6UCROBEKLIVDOPFVP6Z75QS3AV5CUS2WAM3EBQNL7W",
+    contractId: "CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5",
   }
 } as const
 
@@ -59,7 +59,7 @@ export interface Client {
   /**
    * Construct and simulate a initialize transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
-  initialize: ({target, deadline}: {target: u32, deadline: u64}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
+  initialize: ({target, deadline, token}: {target: u32, deadline: u64, token: string}, options?: MethodOptions) => Promise<AssembledTransaction<null>>
 
 }
 export class Client extends ContractClient {
@@ -79,12 +79,12 @@ export class Client extends ContractClient {
   }
   constructor(public readonly options: ContractClientOptions) {
     super(
-      new ContractSpec([ "AAAABQAAAAAAAAAAAAAACUZ1bmRFdmVudAAAAAAAAAEAAAAKZnVuZF9ldmVudAAAAAAABAAAAAAAAAAFZG9ub3IAAAAAAAATAAAAAAAAAAAAAAAGYW1vdW50AAAAAAAEAAAAAAAAAAAAAAAMdG90YWxfcmFpc2VkAAAABAAAAAAAAAAAAAAABnRhcmdldAAAAAAABAAAAAAAAAAC",
-        "AAAABQAAAAAAAAAAAAAACkNsYWltRXZlbnQAAAAAAAEAAAALY2xhaW1fZXZlbnQAAAAAAwAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAAAAAAAAAAAMdG90YWxfcmFpc2VkAAAABAAAAAAAAAAAAAAABnRhcmdldAAAAAAABAAAAAAAAAAC",
+      new ContractSpec([ "AAAABQAAAAAAAAAAAAAACUZ1bmRFdmVudAAAAAAAAAEAAAAKZnVuZF9ldmVudAAAAAAABAAAAAAAAAAFZG9ub3IAAAAAAAATAAAAAQAAAAAAAAAGYW1vdW50AAAAAAAEAAAAAAAAAAAAAAAMdG90YWxfcmFpc2VkAAAABAAAAAAAAAAAAAAABnRhcmdldAAAAAAABAAAAAAAAAAC",
+        "AAAABQAAAAAAAAAAAAAACkNsYWltRXZlbnQAAAAAAAEAAAALY2xhaW1fZXZlbnQAAAAAAwAAAAAAAAAGY2FsbGVyAAAAAAATAAAAAQAAAAAAAAAMdG90YWxfcmFpc2VkAAAABAAAAAAAAAAAAAAABnRhcmdldAAAAAAABAAAAAAAAAAC",
         "AAAAAAAAAAAAAAAEZnVuZAAAAAIAAAAAAAAABWRvbm9yAAAAAAAAEwAAAAAAAAAGYW1vdW50AAAAAAAEAAAAAQAAAAQ=",
         "AAAAAAAAAAAAAAAFY2xhaW0AAAAAAAABAAAAAAAAAAZjYWxsZXIAAAAAABMAAAABAAAABA==",
         "AAAAAAAAAAAAAAAKZ2V0X3N0YXR1cwAAAAAAAAAAAAEAAAPqAAAABg==",
-        "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAAAgAAAAAAAAAGdGFyZ2V0AAAAAAAEAAAAAAAAAAhkZWFkbGluZQAAAAYAAAAA" ]),
+        "AAAAAAAAAAAAAAAKaW5pdGlhbGl6ZQAAAAAAAwAAAAAAAAAGdGFyZ2V0AAAAAAAEAAAAAAAAAAhkZWFkbGluZQAAAAYAAAAAAAAABXRva2VuAAAAAAAAEwAAAAA=" ]),
       options
     )
   }

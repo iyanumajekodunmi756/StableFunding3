@@ -2,7 +2,7 @@
 
 A Soroban smart contract crowdfunding campaign with a React/Next.js frontend, deployed on Stellar Testnet.
 
-- **Smart Contract (Testnet):** `CCLJ4FEXKXEZKS6UCROBEKLIVDOPFVP6Z75QS3AV5CUS2WAM3EBQNL7W`
+- **Smart Contract (Testnet):** `CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5`
 - **Live Demo Link:** https://stellar-orange-belt-crowdfund-inyxwywvi.vercel.app/
 - **Stack:** Soroban (Rust), Next.js, Tailwind CSS, `@creit.tech/stellar-wallets-kit`, GitHub Actions, Vitest
 - **Wallets Supported:** Freighter, xBull, Albedo
@@ -121,7 +121,17 @@ ADMIN_SK=S... bash scripts/deploy.sh
 
 It runs: **build → install wasm → deploy → initialize (target/deadline/token) → regenerate TS bindings**, printing the new `CONTRACT_ID`. Env vars: `RPC_URL`, `NETWORK_PASSPHRASE`, `TOKEN` (default native XLM on testnet), `TARGET`, `DEADLINE`.
 
-> Note: the contract was recently upgraded to move real XLM via the SAC. Redeploy with `scripts/deploy.sh` to point the app at the new bytecode, then update `networks.testnet.contractId` and `NEXT_PUBLIC_CONTRACT_ID`.
+### Current testnet deployment
+
+Deployed with `scripts/deploy.sh` using a Friendbot-funded account (`GCMB2PT4DAFCRZKMMGN3NBWAADPXEYNECVHGNVCCZNB3TPNTLQNLYPHR`, identity `crowdfund-admin`).
+
+| Step | Transaction hash |
+| --- | --- |
+| Wasm install | `c0461f64229048ed81bbe66a7f8a755ac68bc1790a8d3736b9cb63024a65b677` |
+| Contract deploy | `c5d25ad411db0b6eb39f2351f4c4507f1a6056d31f1fffe59b41d7c513dad4d3` |
+| `initialize` (target 1000, +30 days, native XLM) | `bb8cfb3e92f574a4d355e03168b179501c4c769d128279db010b3ae8f404d858` |
+
+These hashes serve as the **transaction-hash evidence** for the submission checklist (viewable on Stellar Expert).
 
 ## 7. CI/CD Pipeline
 
@@ -143,7 +153,7 @@ Optional env vars (defaults shown):
 
 ```bash
 NEXT_PUBLIC_RPC_URL=https://soroban-testnet.stellar.org
-NEXT_PUBLIC_CONTRACT_ID=CCLJ4FEXKXEZKS6UCROBEKLIVDOPFVP6Z75QS3AV5CUS2WAM3EBQNL7W
+NEXT_PUBLIC_CONTRACT_ID=CBOWCRF6GCFFTJ2IRQDO27UM4BTE4GPCB763H4R543BIJHKERFFC2GX5
 ```
 
 ## Submission Requirements Coverage

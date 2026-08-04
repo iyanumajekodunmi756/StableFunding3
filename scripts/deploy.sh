@@ -53,12 +53,12 @@ stellar contract invoke \
   --source "$ADMIN_SK" \
   --rpc-url "$RPC_URL" \
   --network-passphrase "$NETWORK_PASSPHRASE" \
-  initialize -- --target "$TARGET" --deadline "$DEADLINE" --token "$TOKEN"
+  -- initialize --target "$TARGET" --deadline "$DEADLINE" --token "$TOKEN"
 
 echo "==> [5/5] Regenerating TypeScript bindings"
 # Note: --overwrite is only available on newer stellar-cli versions;
 # drop it if your CLI rejects the flag.
-stellar contract bindings ts \
+stellar contract bindings typescript \
   --id "$CONTRACT_ID" \
   --rpc-url "$RPC_URL" \
   --network-passphrase "$NETWORK_PASSPHRASE" \
