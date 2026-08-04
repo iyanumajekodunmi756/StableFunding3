@@ -56,6 +56,8 @@ stellar contract invoke \
   initialize -- --target "$TARGET" --deadline "$DEADLINE" --token "$TOKEN"
 
 echo "==> [5/5] Regenerating TypeScript bindings"
+# Note: --overwrite is only available on newer stellar-cli versions;
+# drop it if your CLI rejects the flag.
 stellar contract bindings ts \
   --id "$CONTRACT_ID" \
   --rpc-url "$RPC_URL" \

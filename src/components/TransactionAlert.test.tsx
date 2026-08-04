@@ -2,17 +2,20 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import TransactionAlert from "./TransactionAlert";
 
-const base = {
-  hash: null as string | null,
-  error: null as string | null,
-  explorerUrl: null as string | null,
-  onDismiss: () => {},
-};
+const onDismiss = () => {};
+const EXPLORER = "https://stellar.expert/explorer/testnet/tx/abc123";
 
 describe("TransactionAlert", () => {
   it("renders nothing when there is no transaction result", () => {
     const { container } = render(
-      <TransactionAlert status={null} {...base} action="contribute" />,
+      <TransactionAlert
+        status={null}
+        hash={null}
+        error={null}
+        explorerUrl={null}
+        action="contribute"
+        onDismiss={onDismiss}
+      />,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -22,9 +25,10 @@ describe("TransactionAlert", () => {
       <TransactionAlert
         status="success"
         hash="abc123"
-        explorerUrl="https://stellar.expert/explorer/testnet/tx/abc123"
+        error={null}
+        explorerUrl={EXPLORER}
         action="claim"
-        {...base}
+        onDismiss={onDismiss}
       />,
     );
     expect(screen.getByText("Funds claimed successfully!")).toBeInTheDocument();
@@ -35,16 +39,26 @@ describe("TransactionAlert", () => {
       <TransactionAlert
         status="success"
         hash="abc123"
-        explorerUrl="https://stellar.expert/explorer/testnet/tx/abc123"
+        error={null}
+        explorerUrl={EXPLORER}
         action="contribute"
-        {...base}
+        onDismiss={onDismiss}
       />,
     );
     expect(screen.getByText("Contribution recorded on-chain!")).toBeInTheDocument();
   });
 
   it("shows failure state with the error message", () => {
-    render(<TransactionAlert {...base} status="failure" error="boom" action="contribute" />);
+    render(
+      <TransactionAlert
+        status="failure"
+        hash={null}
+        error="boom"
+        explorerUrl={null}
+        action="contribute"
+        onDismiss={onDismiss}
+      />,
+    );
     expect(screen.getByText("Transaction Failed")).toBeInTheDocument();
     expect(screen.getByText("boom")).toBeInTheDocument();
   });

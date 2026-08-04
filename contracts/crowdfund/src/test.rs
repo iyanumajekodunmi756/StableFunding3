@@ -24,7 +24,7 @@ fn setup(env: &Env, target: u32, deadline: u64) -> (Address, Address, token::Cli
 
 /// Mints `amount` of the campaign token to `to`. Tests run with
 /// `env.mock_all_auths()`, so admin auth is auto-approved.
-fn mint(token: &Address, to: &Address, amount: i128, env: &Env) {
+fn mint(env: &Env, token: &Address, to: &Address, amount: i128) {
     let admin_client = token::StellarAssetClient::new(env, token);
     admin_client.mint(to, &amount);
 }
@@ -40,8 +40,8 @@ fn test_contribution_tracking() {
 
     let donor1 = Address::generate(&env);
     let donor2 = Address::generate(&env);
-    mint(&token, &donor1, 1000, &env);
-    mint(&token, &donor2, 1000, &env);
+    mint(&env, &token, &donor1, 1000);
+    mint(&env, &token, &donor2, 1000);
 
     let raised = client.fund(&donor1, &200);
     assert_eq!(raised, 200);
@@ -71,7 +71,7 @@ fn test_claim_after_target_met_and_deadline_passed() {
     let client = CrowdfundContractClient::new(&env, &contract_id);
 
     let donor = Address::generate(&env);
-    mint(&token, &donor, 500, &env);
+    mint(&env, &token, &donor, 500);
 
     let raised = client.fund(&donor, &500);
     assert_eq!(raised, 500);
@@ -102,7 +102,7 @@ fn test_premature_claim_before_deadline_panics() {
     let client = CrowdfundContractClient::new(&env, &contract_id);
 
     let donor = Address::generate(&env);
-    mint(&token, &donor, 500, &env);
+    mint(&env, &token, &donor, 500);
     client.fund(&donor, &500);
 
     let caller = Address::generate(&env);
@@ -120,7 +120,7 @@ fn test_double_claim_panics() {
     let client = CrowdfundContractClient::new(&env, &contract_id);
 
     let donor = Address::generate(&env);
-    mint(&token, &donor, 500, &env);
+    mint(&env, &token, &donor, 500);
     client.fund(&donor, &500);
 
     env.ledger().set_timestamp(3000);

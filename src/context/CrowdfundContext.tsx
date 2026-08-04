@@ -16,11 +16,13 @@ import { xBullModule } from "@creit.tech/stellar-wallets-kit/modules/xbull";
 import { AlbedoModule } from "@creit.tech/stellar-wallets-kit/modules/albedo";
 import { Client, networks, rpc, scValToNative } from "@/contracts/crowdfund-client";
 import type { CampaignState, ContributionEvent, TxState } from "@/types";
+import { decodeContributionEvents } from "@/utils/events";
 import { mapTransactionError } from "@/utils/errors";
 
 const MODULES = [new FreighterModule(), new xBullModule(), new AlbedoModule()];
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = process.env.NEXT_PUBLIC_CONTRACT_ID || networks.testnet.contractId;
+const EVENTS_SERVER = new rpc.Server(RPC_URL);
 const CACHE_KEY = "crowdfund_campaign";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const POLL_INTERVAL_MS = 30 * 1000;
@@ -129,32 +131,14 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
    */
   const refreshEvents = useCallback(async () => {
     try {
-      const server = new rpc.Server(RPC_URL);
-      const latest = await server.getLatestLedger();
-      const res = await server.getEvents({
+      const latest = await EVENTS_SERVER.getLatestLedger();
+      const res = await EVENTS_SERVER.getEvents({
         startLedger: Math.max(latest.sequence - EVENT_LOOKBACK_LEDGERS, 1),
         filters: [{ type: "contract", contractIds: [CONTRACT_ID] }],
         limit: 10,
       });
 
-      const parsed: ContributionEvent[] = [];
-      for (const e of res.events) {
-        if (!e.inSuccessfulContractCall) continue;
-        const topics = e.topic.map((t) => scValToNative(t));
-        if (topics[0] !== "fund_event") continue;
-
-        const data = scValToNative(e.value) as number[];
-        const legacy = topics.length === 1; // pre-attribute encoding: donor in data
-        parsed.push({
-          donor: String(legacy ? data[0] : topics[1]),
-          amount: Number(legacy ? data[1] : data[0]),
-          totalRaised: Number(legacy ? data[2] : data[1]),
-          ledger: e.ledger,
-        });
-      }
-
-      parsed.sort((a, b) => b.ledger - a.ledger);
-      setRecentEvents(parsed.slice(0, 6));
+      setRecentEvents(decodeContributionEvents(res.events, scValToNative));
     } catch (err) {
       console.error("Event stream error:", err);
     }
