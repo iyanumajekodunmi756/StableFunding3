@@ -179,8 +179,13 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
     });
 
     clientRef.current = client;
-    refreshCampaign();
-    refreshEvents();
+    // Defer the initial fetch out of the synchronous effect body to avoid
+    // cascading renders (react-hooks/set-state-in-effect).
+    const id = setTimeout(() => {
+      refreshCampaign();
+      refreshEvents();
+    }, 0);
+    return () => clearTimeout(id);
   }, [address, refreshCampaign, refreshEvents]);
 
   // Real-time updates: poll campaign status + events while connected.
@@ -235,7 +240,7 @@ export function CrowdfundProvider({ children }: { children: ReactNode }) {
         setTxState({ status: "failure", action: "contribute", hash: null, error: mapped.message });
       }
     },
-    [address, refreshCampaign]
+    [address, refreshCampaign, refreshEvents]
   );
 
   const claim = useCallback(async () => {
