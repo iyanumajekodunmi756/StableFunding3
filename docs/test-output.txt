@@ -13,7 +13,7 @@ Full raw output below for evidence.
    Exit code: 0
 --------------------------------------------------------
 
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.58s
      Running unittests src/lib.rs (/workspaces/StableFunding3/target/debug/deps/crowdfund-fce8209a02eda461)
 
 running 5 tests
@@ -23,7 +23,7 @@ test test::test_fund_after_deadline_panics - should panic ... ok
 test test::test_double_claim_panics - should panic ... ok
 test test::test_premature_claim_before_deadline_panics - should panic ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.32s
 
 --------------------------------------------------------
 2) Frontend tests — `npm test` (vitest run)
@@ -36,16 +36,16 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
  RUN  v2.1.9 /workspaces/StableFunding3
 
- ✓ src/utils/events.test.ts (5 tests) 18ms
- ✓ src/components/TransactionAlert.test.tsx (4 tests) 56ms
- ✓ src/utils/errors.test.ts (5 tests) 5ms
- ✓ src/components/ProgressBar.test.tsx (3 tests) 57ms
- ✓ src/components/CountdownTimer.test.tsx (2 tests) 38ms
+ ✓ src/utils/events.test.ts (5 tests) 20ms
+ ✓ src/components/TransactionAlert.test.tsx (4 tests) 52ms
+ ✓ src/utils/errors.test.ts (5 tests) 4ms
+ ✓ src/components/ProgressBar.test.tsx (3 tests) 56ms
+ ✓ src/components/CountdownTimer.test.tsx (2 tests) 47ms
 
  Test Files  5 passed (5)
       Tests  19 passed (19)
-   Start at  11:35:51
-   Duration  5.87s (transform 164ms, setup 374ms, collect 368ms, tests 192ms, environment 3.59s, prepare 363ms)
+   Start at  11:46:55
+   Duration  6.55s (transform 125ms, setup 420ms, collect 545ms, tests 180ms, environment 3.89s, prepare 423ms)
 
 ========================================================
  Summary
