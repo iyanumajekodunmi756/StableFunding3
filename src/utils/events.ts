@@ -15,6 +15,11 @@ export interface RawContractEvent {
  *   topics: [symbol "fund_event", donor]
  *   data:   [amount, total_raised, target]
  *
+ * NOTE: when the contract marks several struct fields with #[data], Soroban
+ * encodes them as a struct ScVal (map), e.g. `{ amount, total_raised,
+ * target }` — the shape the deployed contract emits. Both the Vec and the
+ * struct shape are handled below.
+ *
  * Legacy encoding (no attributes, all fields in data):
  *   topics: [symbol "fund_event"]
  *   data:   [donor, amount, total_raised, target]
@@ -34,17 +39,34 @@ export function decodeContributionEvents(
     const topics = e.topic.map((t) => scValToNative(t));
     if (topics[0] !== "fund_event") continue;
 
-    const data = scValToNative(e.value) as unknown[];
+    const data = scValToNative(e.value);
     const legacy = topics.length === 1; // pre-attribute encoding: donor lives in data
 
-    parsed.push({
-      donor: String(legacy ? data[0] : topics[1]),
-      amount: Number(legacy ? data[1] : data[0]),
-      totalRaised: Number(legacy ? data[2] : data[1]),
-      ledger: e.ledger,
-    });
+    let donor: string;
+    let amount: number;
+    let totalRaised: number;
+
+    if (Array.isArray(data)) {
+      // Vec encoding: legacy [donor, amount, total_raised, target] or new [amount, total_raised, target]
+      donor = String(legacy ? data[0] : topics[1]);
+      amount = toFinite(legacy ? data[1] : data[0]);
+      totalRaised = toFinite(legacy ? data[2] : data[1]);
+    } else {
+      // Struct encoding: new #[data] fields on a struct → { amount, total_raised, target }
+      const record = data as Record<string, unknown>;
+      donor = String(topics[1]);
+      amount = toFinite(record.amount);
+      totalRaised = toFinite(record.total_raised);
+    }
+
+    parsed.push({ donor, amount, totalRaised, ledger: e.ledger });
   }
 
   parsed.sort((a, b) => b.ledger - a.ledger);
   return parsed.slice(0, 6);
+}
+
+function toFinite(v: unknown): number {
+  const n = Number(v);
+  return Number.isNaN(n) ? 0 : n;
 }

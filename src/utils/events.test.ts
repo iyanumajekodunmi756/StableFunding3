@@ -24,6 +24,17 @@ function legacyEncodingEvent(ledger: number): RawContractEvent {
   };
 }
 
+// The deployed contract marks multiple struct fields with #[data], which
+// Soroban encodes as a struct ScVal (map) rather than a Vec.
+function structEncodingEvent(ledger: number): RawContractEvent {
+  return {
+    topic: [nativeToScVal("fund_event"), nativeToScVal(DONOR)],
+    value: nativeToScVal({ amount: 100, total_raised: 500, target: 1000 }),
+    ledger,
+    inSuccessfulContractCall: true,
+  };
+}
+
 describe("decodeContributionEvents", () => {
   it("decodes the new #[topic]/#[data] encoding", () => {
     const events = decodeContributionEvents([newEncodingEvent(12345)], scValToNative);
@@ -36,6 +47,13 @@ describe("decodeContributionEvents", () => {
     const events = decodeContributionEvents([legacyEncodingEvent(12346)], scValToNative);
     expect(events).toEqual([
       { donor: DONOR2, amount: 250, totalRaised: 750, ledger: 12346 },
+    ]);
+  });
+
+  it("decodes the struct-encoded #[data] emitted by the deployed contract", () => {
+    const events = decodeContributionEvents([structEncodingEvent(12347)], scValToNative);
+    expect(events).toEqual([
+      { donor: DONOR, amount: 100, totalRaised: 500, ledger: 12347 },
     ]);
   });
 
