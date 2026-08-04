@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { StellarWalletsKit } from "@creit.tech/stellar-wallets-kit";
 import { Networks } from "@creit.tech/stellar-wallets-kit/types";
 import { FreighterModule } from "@creit.tech/stellar-wallets-kit/modules/freighter";
@@ -82,7 +83,14 @@ export default function WalletModal({ isOpen, onClose, onConnect }: WalletModalP
                       : "border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50"
                   } ${isLoading ? "animate-pulse" : ""}`}
                 >
-                  <img src={wallet.icon} alt={wallet.name} className="h-8 w-8 rounded-full" />
+                  <Image
+                    src={wallet.icon}
+                    alt={wallet.name}
+                    width={32}
+                    height={32}
+                    unoptimized
+                    className="h-8 w-8 rounded-full"
+                  />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">{wallet.name}</p>
                     {!wallet.isAvailable && <p className="text-xs text-gray-500">Not detected</p>}
