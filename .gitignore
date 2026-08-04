@@ -7,3 +7,4 @@ contracts/*/target
 target
 .soroban
 .stellar
+.vercel
